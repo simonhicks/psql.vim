@@ -11,11 +11,15 @@ let g:done_psql_autoload=1
 let g:psql_default_conn={}
 let g:psql_default_conn.host=''
 let g:psql_default_conn.database=''
+let g:psql_default_conn.user=''
+let g:psql_default_conn.password=''
 
 function! psql#connect()
   let b:psql_connection={}
 	let b:psql_connection.host=input("Host: ", g:psql_default_conn.host)
 	let b:psql_connection.database=input("DB Name: ", g:psql_default_conn.database)
+  let b:psql_connection.user=input("User: ", g:psql_default_conn.user)
+  let b:psql_connection.password=input("Password: ", g:psql_default_conn.password)
 	call psql#setup(b:psql_connection)
 	echom "Connected!"
 endfunction
@@ -28,6 +32,8 @@ endfunction
 function! psql#set_defaults(conn)
 	let g:psql_default_conn.host=a:conn.host
 	let g:psql_default_conn.database=a:conn.database
+	let g:psql_default_conn.password=a:conn.password
+  let g:psql_default_conn.user=a:conn.user
 endfunction
 
 function! psql#run_buffer()
@@ -90,19 +96,35 @@ function! psql#create_result_buffer()
 	setlocal nomodifiable
 endfunction
 
-function! psql#run_query(query_file)
+function! psql#build_cmd(query_file)
 	let conn = b:psql_connection
-  let lines = split(system("psql -h " . conn.host . " -f " . a:query_file . " " . conn.database), "\n")
-	let result_lines = []
-	let starlines = 0
-	for line in lines
-		if starlines == 4
-			call add(result_lines, line)
-		else
-			if match(line, "^[*][*]*$") != -1
-				let starlines +=1
-			endif
-		endif
-	endfor
-	return result_lines
+  let cmd = ""
+  if len(conn.password) > 0
+    let cmd = cmd . 'PGPASSWORD=' . conn.password
+  endif
+  let cmd = cmd . ' psql -h ' . conn.host . " -f " . a:query_file
+  if len(conn.user) > 0
+    let cmd = cmd . ' -U ' . conn.user
+  endif
+  let cmd = cmd . ' ' . conn.database
+  echom cmd
+  return cmd
+endfunction
+
+function! psql#run_query(query_file)
+  let lines = split(system(psql#build_cmd(a:query_file)), "\n")
+  return lines
+  " FIXME make this gibberish-filter configurable
+	" let result_lines = []
+	" let starlines = 0
+	" for line in lines
+		" if starlines == 4
+			" call add(result_lines, line)
+		" else
+		" 	if match(line, "^[*][*]*$") != -1
+		" 		let starlines +=1
+		" 	endif
+		" endif
+	" endfor
+	" return result_lines
 endfunction
