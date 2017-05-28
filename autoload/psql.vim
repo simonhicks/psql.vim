@@ -19,14 +19,15 @@ function! psql#connect()
 	let b:psql_connection.host=input("Host: ", g:psql_default_conn.host)
 	let b:psql_connection.database=input("DB Name: ", g:psql_default_conn.database)
   let b:psql_connection.user=input("User: ", g:psql_default_conn.user)
-  let b:psql_connection.password=input("Password: ", g:psql_default_conn.password)
+  let b:psql_connection.password=inputsecret("Password: ", g:psql_default_conn.password)
 	call psql#setup(b:psql_connection)
+  call feedkeys(":")
 	echom "Connected!"
 endfunction
 
 function! psql#setup(conn)
 	call psql#set_defaults(a:conn)
-	nmap <buffer> g<CR> :call psql#run_buffer()<CR>
+	nmap <silent> <buffer> g<CR> :call psql#run_buffer()<CR>
 endfunction
 
 function! psql#set_defaults(conn)
@@ -100,14 +101,13 @@ function! psql#build_cmd(query_file)
 	let conn = b:psql_connection
   let cmd = ""
   if len(conn.password) > 0
-    let cmd = cmd . 'PGPASSWORD=' . conn.password
+    let cmd = cmd . 'PGPASSWORD="' . conn.password . '"'
   endif
   let cmd = cmd . ' psql -h ' . conn.host . " -f " . a:query_file
   if len(conn.user) > 0
     let cmd = cmd . ' -U ' . conn.user
   endif
   let cmd = cmd . ' ' . conn.database
-  echom cmd
   return cmd
 endfunction
 
