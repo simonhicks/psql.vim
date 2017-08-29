@@ -13,10 +13,12 @@ let g:psql_default_conn.host=''
 let g:psql_default_conn.database=''
 let g:psql_default_conn.user=''
 let g:psql_default_conn.password=''
+let g:psql_default_conn.port='5432'
 
 function! psql#connect()
   let b:psql_connection={}
 	let b:psql_connection.host=input("Host: ", g:psql_default_conn.host)
+  let b:psql_connection.port=input("Port: ", g:psql_default_conn.port)
 	let b:psql_connection.database=input("DB Name: ", g:psql_default_conn.database)
   let b:psql_connection.user=input("User: ", g:psql_default_conn.user)
   let b:psql_connection.password=inputsecret("Password: ", g:psql_default_conn.password)
@@ -35,12 +37,31 @@ function! psql#set_defaults(conn)
 	let g:psql_default_conn.database=a:conn.database
 	let g:psql_default_conn.password=a:conn.password
   let g:psql_default_conn.user=a:conn.user
+  let g:psql_default_conn.port=a:conn.port
 endfunction
 
 function! psql#run_buffer()
+  call s:store_location()
   let query_file = psql#create_query_file()
 	let result_lines = psql#run_query(query_file)
 	call psql#display_result(result_lines)
+endfunction
+
+function! s:go_to_open_window(buffer)
+  while bufnr('%') != a:buffer
+    execute "norm! "
+  endwhile
+endfunction
+
+function! s:store_location()
+  let g:psql_old_location = {}
+  let g:psql_old_location.buffer = bufnr("%")
+  let g:psql_old_location.line = line(".")
+endfunction
+
+function! s:restore_location()
+  call s:go_to_open_window(g:psql_old_location.buffer)
+  execute "norm! " . g:psql_old_location.line . "gg"
 endfunction
 
 function! psql#display_result(result_lines)
@@ -49,6 +70,7 @@ function! psql#display_result(result_lines)
 	normal! ggVGd
 	call append(0, a:result_lines)
 	setlocal nomodifiable
+  call s:restore_location()
 endfunction
 
 function! psql#create_query_file()
@@ -70,9 +92,7 @@ function! psql#open_result_buffer()
 		if psql#is_visible(bnum) == 0
 			execute "sbuffer " . bnum
 		else
-			while bufnr('%') != bnum
-				execute "norm! "
-			endwhile
+      call s:go_to_open_window(bnum)
 		endif
 	endif
 endfunction
@@ -103,7 +123,7 @@ function! psql#build_cmd(query_file)
   if len(conn.password) > 0
     let cmd = cmd . 'PGPASSWORD="' . conn.password . '"'
   endif
-  let cmd = cmd . ' psql -h ' . conn.host . " -f " . a:query_file
+  let cmd = cmd . ' psql -h ' . conn.host . ' -p ' . conn.port . " -f " . a:query_file
   if len(conn.user) > 0
     let cmd = cmd . ' -U ' . conn.user
   endif
