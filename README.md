@@ -1,10 +1,16 @@
 # PSQL.vim
 
 This is a plugin to let you send SQL statements from vim to psql and get the results back in a vim
-buffer. It's very basic, and so far has the following limitations:
+buffer.
 
-- Only supports passwordless DB login
-- Only supports submitting the entire buffer content to psql at once
+## Usage
 
-There are probably more limitations too. I basically wrote this specifically so I could poke around
-a specific DB server from vim, so I really only *know* that it works on that server.
+Run `:PsqlConnect` and follow the prompts to connect your buffer to a specific db. This will add the
+following mappings
+
+- `c<GR>`: Run the entire buffer and display the results
+- `cp`: Run the currently selected region and display the results
+- `cpp`: Run the current line and display the results
+
+It also creates the `cp` operator, which does exactly what you'd expect given the above (so `cpip`
+will run the current paragraph, etc.)
