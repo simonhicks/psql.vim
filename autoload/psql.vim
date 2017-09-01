@@ -115,6 +115,14 @@ function! s:execute_lines(lines)
 	call s:display_result(result_lines)
 endfunction
 
+function! s:describe(table)
+  let query_file = s:query_file(['\d ' . a:table])
+  let result_lines = s:run_query(query_file)
+  for line in result_lines
+    echo line
+  endfor
+endfunction
+
 function! psql#operator(type, ...)
   call s:store_location()
   let sel_save = &selection
@@ -147,6 +155,7 @@ function! psql#connect()
   nnoremap <buffer> cp :set operatorfunc=psql#operator<CR>g@
   vnoremap <buffer> cp :<c-u> call psql#operator(visualmode(), 1)<CR>
   nmap <buffer> cpp Vcp
+  nmap <silent> <buffer> K :call <SID>describe(expand("<cWORD>"))<CR>
   call feedkeys(":")
 	echom "Connected!"
 endfunction
