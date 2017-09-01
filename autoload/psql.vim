@@ -110,29 +110,29 @@ endfunction
 " PLUGIN OPERATIONS
 
 function! s:execute_lines(lines)
-  call s:store_location()
   let query_file = s:query_file(a:lines)
   let result_lines = s:run_query(query_file)
 	call s:display_result(result_lines)
-  call s:restore_location()
 endfunction
 
 function! psql#operator(type, ...)
-	  let sel_save = &selection
-	  let &selection = "inclusive"
-	  let reg_save = @@
-	  if a:0  " Invoked from Visual mode, use gv command.
-	    silent exe "normal! gvy"
-    elseif a:type == 'wholebuffer'
-      silent exe "normal! ggVGy"
-	  elseif a:type == 'line'
-	    silent exe "normal! '[V']y"
-	  else
-	    silent exe "normal! `[v`]y"
-	  endif
-    call s:execute_lines(split(@@, "\n"))
-	  let &selection = sel_save
-	  let @@ = reg_save
+  call s:store_location()
+  let sel_save = &selection
+  let &selection = "inclusive"
+  let reg_save = @@
+  if a:0  " Invoked from Visual mode, use gv command.
+    silent exe "normal! gvy"
+  elseif a:type == 'wholebuffer'
+    silent exe "normal! ggVGy"
+  elseif a:type == 'line'
+    silent exe "normal! '[V']y"
+  else
+    silent exe "normal! `[v`]y"
+  endif
+  call s:execute_lines(split(@@, "\n"))
+  let &selection = sel_save
+  let @@ = reg_save
+  call s:restore_location()
 endfunction
 
 function! psql#connect()
